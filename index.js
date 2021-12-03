@@ -16,7 +16,7 @@ booky.use(bodyParser.json());
 
 //models
 const BookModel = require("./database/book");
-const authorModel = require("./database/author");
+const PublicationModel = require("./database/publication");
 const AuthorModel = require("./database/author");
 
 
@@ -48,36 +48,34 @@ Access          Public
 Parameter       isbn 
 Methods         GET
 */
-booky.get("/is/:isbn", (req,res) => {
-  const getSpecificBook = database.books.filter(
-    (book) => book.ISBN === req.params.isbn
-  );
-
-  if(getSpecificBook.length === 0) {
-    return res.json({
-      error: `No book found for ISBN of ${req.params.isbn}`
-    });
-  }
-
-  return res.json({book: getSpecificBook});
-
-});
-
+booky.get("/is/:isbn",async (req,res) => {
+  const getSpecificBook = await BookModel.findOne({ISBN: req.params.isbn});
+ 
+   if(!getSpecificBook) {
+     return res.json({
+       error: `No book found for ISBN of ${req.params.isbn}`
+     });
+   }
+ 
+   return res.json(getSpecificBook);
+ 
+ });
 //get books on a specific category
 
-booky.get("/c/:category", (req,res) =>{
-    const getSpecificBook = database.books.filter((book)=>
-    book.category.includes(req.params.category)
-    );
+booky.get("/c/:category", async (req,res)=> {
 
-    if(getSpecificBook.length === 0) {
-        return res.json({
-          error: `No book found for category of ${req.params.category}`
-        });
-      }
-    
-    return res.json({book: getSpecificBook});
-});
+  const getSpecificBook = await BookModel.findOne({category: req.params.categry});
+  //If no specific book is returned the , the findne func returns null, and to execute the not
+  //found property we have to make the condn inside if true, !null is true.
+  if(!getSpecificBook) {
+    return res.json({
+      error: `No book found for category of ${req.params.category}`
+    });
+  }
+  
+  return res.json({book: getSpecificBook});
+  
+  });
 
 //get books based on languages
 
@@ -94,37 +92,35 @@ booky.get("/language", (req,res)=>{
 });
 
 
-
-
-
-
-
-
 //get all authors, route- /author
 
-booky.get("/author", (req,res) =>{
-  return res.json({authors: database.author});
+booky.get("/author",async (req, res)=> {
+  const getAllAuthors = AuthorModel.find();
+  return res.json(getAllAuthors);
 });
+
 
 //get all authors based on book
 
-booky.get("/author/book/:isbn", (req,res) =>{
-  const getSpecificAuthor = database.author.filter((author)=>
-  author.books.includes(req.params.isbn)
-  );
-  if(getSpecificAuthor.length===0){
-    returnres.json({
-      error: `No author found for isbn of ${req.params.isbn}`
-    });
-  }
-  return res.json({authors:getSpecificAuthor});
+
+booky.get("/author/book/:isbn",async (req,res)=> {
+  const getSpecificAuthor = await AuthorModel.findOne({books: req.params.isbn});
+
+if(!getSpecificAuthor) {
+  return res.json({
+    error: `No author found for isbn of ${req.params.isbn}`
+  });
+}
+
+return res.json({authors: getSpecificAuthor});
 });
+
 
 //get all publications
-booky.get("/publications", (req,res)=>{
-  return res.json({publications :database.publication});
+booky.get("/publications", (req,res) => {
+  const getAllPublications = PublicationModel.find();
+  return res.json(getAllPublications);
 });
-
 
 
 //ADD NEW BOOKS- POST REQUEST
@@ -136,10 +132,10 @@ parameter- none
 methods- post
 */
 
-booky.post("/book/new", (req,res)=>{
-  const newBook = req.body;
-  database.books.push(newBook);
-  return res.json({updatedBooks: database.books});
+booky.post("/book/new", async(req,res)=>{
+  const {newBook} = req.body;
+  const addNewBook= BookModel.create(newBook)
+  return res.json({books: addNewBook, message:"Book/s added succesfully !"});
 });
 
 
@@ -152,10 +148,10 @@ parameter- none
 methods- post
 */
 
-booky.post("/author/new", (req,res)=>{
-  const newAuthor = req.body;
-  database.author.push(newAuthor);
-  return res.json({updatedAuthors: database.author});
+booky.post("/author/new", async(req,res)=>{
+  const {newAuthor} = req.body;
+ AuthorModel.create(newAuthor);
+  return res.json({authors: database.author, message:"Authors added successfully !"});
 });
 
 
